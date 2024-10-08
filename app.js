@@ -1,3 +1,6 @@
+
+require("dotenv").config()
+
 const express = require("express");
 const app = express();
 const PORT = 2121;
@@ -11,17 +14,18 @@ app.use(express.json());
 //user route middleware file
 const userRoutes = require("./Route/userRoute.js");
 //user middleware
-app.use("/api/user", userRoutes);
+app.use("/api/users", userRoutes);
 
-//answer route middleware file
+// answer route middleware file
 const answerRoutes = require("./Route/answerRoute");
-//answer middleware
-app.use("/api/answer/", answerRoutes);
+// answer middleware
+app.use("/api/answer", answerRoutes);
 
-//question route middleware file
+// question route middleware file
 const questionRoutes = require("./Route/questionRoute.js");
-//question middleware
-app.use("/api/question/", questionRoutes);
+
+// question middleware
+app.use("/api/question", questionRoutes);
 
 async function start() {
   try {

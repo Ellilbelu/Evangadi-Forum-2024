@@ -1,21 +1,24 @@
-//import express and route module
+// import express and route module
 const express = require("express");
 const router = express.Router();
 
+
+const authMiddleware = require("../MiddleWare/authMiddleware");
+
 //question controllers
 const {
-  allQuestions,
-  singleQuestion,
   submitQuestion,
+  getAllQuestions,
+  getSingleQuestion,
 } = require("../Controller/questionControllers");
 
 //Get All Questions
-router.get("/", allQuestions);
+router.get("/", authMiddleware, getAllQuestions);
 
 //Get Single Question
-router.get("/:question_id", singleQuestion);
+router.get("/:question_id", authMiddleware, getSingleQuestion);
 
 //Post Question
-router.post("/", submitQuestion);
+router.post("/", authMiddleware, submitQuestion);
 
 module.exports = router;

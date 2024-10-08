@@ -2,6 +2,9 @@
 const express = require("express");
 const router = express.Router();
 
+//importing authentication middleware
+const authMiddleware = require("../MiddleWare/authMiddleware");
+
 //user controllers
 const {
   authentication,
@@ -10,7 +13,7 @@ const {
 } = require("../Controller/userControllers");
 
 // authentication route
-router.get("/checkUser", authentication);
+router.get("/checkUser", authMiddleware, authentication);
 
 //Signup or registration route
 router.post("/register", register);
