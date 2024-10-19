@@ -1,114 +1,106 @@
-// database connnection
-const dbConnection = require("../Database/dbConfig");
+const dbConnection = require("../Database/dbConfig"); // Import database connection
+const { StatusCodes } = require("http-status-codes"); // Import HTTP status codes
+const bcrypt = require("bcrypt"); // Import bcrypt for password hashing
+const jwt = require("jsonwebtoken"); // Import jwt for token generation
 
-//importing the password encrypting module
-const bcrypt = require("bcrypt");
-
-//importing status codes
-const { StatusCodes } = require("http-status-codes");
-
-// importing json web token
-const jwt = require("jsonwebtoken");
-
-// ************afunction to register new user**************
+//--------------------------------------- Register Function ------------------------------------------
 async function register(req, res) {
-  const { username, firstname, lastname, email, password } = req.body;
-
-  if (!email || !password || !firstname || !lastname || !username) {
+  const { username, firstname, lastname, email, password } = req.body; // Destructure request body
+  // Validate required fields
+  if (!username || !firstname || !lastname || !email || !password) {
     return res
-      .status(StatusCodes.BAD_REQUEST)
-      .json({ msg: "please provide the information for all required fields" });
+      .status(StatusCodes.BAD_REQUEST) // Return bad request status
+      .json({ msg: "Please provide all required fields" }); // Response message
   }
-
   try {
+    // Check if username or email already exists in the database
     const [user] = await dbConnection.query(
-      "SELECT username, userid from users WHERE username = ? or email = ?",
+      "SELECT username, userid FROM users WHERE username = ? or email = ?",
       [username, email]
     );
     if (user.length > 0) {
       return res
-        .status(StatusCodes.BAD_REQUEST)
-        .json({ msg: "the user already registered" });
+        .status(StatusCodes.CONFLICT) // Return conflict status if user exists
+        .json({ msg: "You have already registered" });
     }
-
+    // Validate password length
     if (password.length <= 8) {
       return res
-        .status(StatusCodes.BAD_REQUEST)
-        .json({ msg: "password must be at least eight characters" });
+        .status(StatusCodes.BAD_REQUEST) // Return bad request status
+        .json({ msg: "Password must be greater than 8 characters" });
     }
-    //for encrypting the password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    // Password encryption
+    const salt = await bcrypt.genSalt(10); // Generate salt to get a random value
+    const hashedPassword = await bcrypt.hash(password, salt); // Hash the password
 
+    // Insert new user into the database
     await dbConnection.query(
-      "INSERT INTO users (username, firstname, lastname, email,password) VALUES(?,?,?,?,?)",
+      "INSERT INTO users (username, firstname, lastname, email, password) VALUES (?,?,?,?,?)",
       [username, firstname, lastname, email, hashedPassword]
     );
     return res
       .status(StatusCodes.CREATED)
-      .json({ msg: "user created successfully" });
+      .json({ msg: "User created successfully" }); // Success response
   } catch (error) {
-    console.log(error.message);
+    console.log(error.message); // Log error for debugging
     return res
-      .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .json({ msg: "something went wrong, try again later!" });
+      .status(StatusCodes.INTERNAL_SERVER_ERROR) // Return internal server error
+      .json({ msg: "Something went wrong, Try again later" }); // Response message
   }
 }
 
-// a function to login a user
-
+//--------------------------------------- Log in Function ------------------------------------------
 async function login(req, res) {
-  const { email, password } = req.body;
-
+  const { email, password } = req.body; // Destructure request body
+  // Validate required fields
   if (!email || !password) {
     return res
-      .status(StatusCodes.BAD_REQUEST)
-      .json({ msg: "Please enter all required fields!" });
+      .status(StatusCodes.BAD_REQUEST) // Return bad request status
+      .json({ msg: "Please provide all required fields" }); // Response message
   }
-
   try {
-    // Query to find the user by email
+    // Retrieve user by email from the database
     const [user] = await dbConnection.query(
-      "select username,userid,password FROM users WHERE email = ?",
+      "SELECT username, userid, password FROM users WHERE email = ?",
       [email]
     );
     if (user.length == 0) {
       return res
         .status(StatusCodes.BAD_REQUEST)
-        .json({ msg: "user not found" });
+        .json({ msg: "User not found" }); // User not found
     }
-
-    // Compare password
+    // Comparing password with the hashed password
     const isMatch = await bcrypt.compare(password, user[0].password);
     if (!isMatch) {
       return res
         .status(StatusCodes.BAD_REQUEST)
-        .json({ msg: "invalid credential" });
+        .json({ msg: "Invalid Password" }); // Invalid password
     }
-    const username = user[0].username;
-    const userid = user[0].userid;
-    const token = jwt.sign({ username, userid }, process.env.JWT_SECRET, {
-      expiresIn: "60d",
-    });
-    return res
-      .status(StatusCodes.OK)
-      .json({ message: "user login successful", token: token, });
 
-    // return res.json({user:user[0].password})
+    // Generating token
+    const username = user[0].username; // Extract username
+    const userid = user[0].userid; // Extract user ID
+    const token = jwt.sign({ username, userid }, process.env.JWT_SECRET, {
+      expiresIn: "30d",
+    }); // Create JWT token
+    return res.status(StatusCodes.OK).json({
+      msg: "Logged in successfully",
+      token: token,
+      username: username,
+    }); // Success response with token
   } catch (error) {
-    console.log(error.message);
+    console.log(error.message); // Log error for debugging
     return res
-      .status(StatusCodes.INTERNAL_SERVER_ERROR)
-      .json({ msg: "Something went wrong, try again later!" });
+      .status(StatusCodes.INTERNAL_SERVER_ERROR) // Return internal server error
+      .json({ msg: "Something went wrong, Try again later" }); // Response message
   }
 }
 
-//a function to authenticate a user
-async function authentication(req, res) {
-  const username = req.user.username;
-  const userid = req.user.userid;
-
-  res.status(StatusCodes.OK).json({ msg: "valid user", username, userid });
+//--------------------------------------- Check user Function ------------------------------------------
+async function checkUser(req, res) {
+  const username = req.user.username; // Extract username from request
+  const userid = req.user.userid; // Extract user ID from request
+  res.status(StatusCodes.OK).json({ msg: "Valid User", username, userid }); // Response with user info
 }
 
-module.exports = { authentication, register, login };
+module.exports = { register, login, checkUser }; // Export functions

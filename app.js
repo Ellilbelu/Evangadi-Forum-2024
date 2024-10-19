@@ -1,9 +1,11 @@
-
-require("dotenv").config()
+require("dotenv").config();
 
 const express = require("express");
 const app = express();
 const PORT = 2121;
+
+const cors = require("cors");
+app.use(cors());
 
 // database connnection
 const dbConnection = require("./Database/dbConfig.js");
@@ -26,6 +28,12 @@ const questionRoutes = require("./Route/questionRoute.js");
 
 // question middleware
 app.use("/api/question", questionRoutes);
+
+//tag route middleware file
+const tagRoutes = require("./Route/tagRoute");
+
+//tag middleware
+app.use("/api/questions", tagRoutes);
 
 async function start() {
   try {

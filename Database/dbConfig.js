@@ -8,5 +8,6 @@ const dbConnection = mysql2.createPool({
   connectionLimit: 10,
 });
 
+console.log(process.env.JWT_SECRET);
 
 module.exports = dbConnection.promise();

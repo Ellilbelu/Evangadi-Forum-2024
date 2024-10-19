@@ -13,10 +13,10 @@ const {
 } = require("../Controller/questionControllers");
 
 //Get All Questions
-router.get("/", authMiddleware, getAllQuestions);
+router.get("/",  getAllQuestions);
 
 //Get Single Question
-router.get("/:question_id", authMiddleware, getSingleQuestion);
+router.get("/:question_id",  getSingleQuestion);
 
 //Post Question
 router.post("/", authMiddleware, submitQuestion);
